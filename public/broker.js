@@ -41,7 +41,7 @@ function render(deals) {
       <td>${escapeHTML(deal.deal_name)}</td>
       <td><span class="pill">${escapeHTML(deal.stage_label)}</span></td>
       <td>${deal.offer_amount ? formatCurrency(deal.offer_amount) : "-"}</td>
-      <td>${deal.offer_term_months ? `${deal.offer_term_months} mo` : "-"}</td>
+      <td>${deal.offer_term_value && deal.offer_term_unit ? `${deal.offer_term_value} ${deal.offer_term_unit}` : "-"}</td>
       <td>${deal.factor_rate ? `${deal.factor_rate}x` : "-"}</td>
       <td>${escapeHTML(deal.next_action)}</td>
       <td>${formatDate(deal.submitted_at)}</td>

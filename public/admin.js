@@ -1,4 +1,13 @@
-const STAGES = ["Intake", "In Pricing", "Offer Sent", "Docs Sent", "Final Review", "Funded"];
+const STAGES = [
+  "Submission Received",
+  "In Pricing",
+  "Offer or Declined",
+  "Docs Requested",
+  "Docs Sent",
+  "In Login",
+  "Call Completed Working on Report",
+  "Funded"
+];
 const OFFER_STAGE_INDEX = 2;
 const token = localStorage.getItem("kapfi_token");
 const user = safeParse(localStorage.getItem("kapfi_user"));
@@ -59,8 +68,7 @@ dealForm.addEventListener("submit", async (event) => {
       method: "POST",
       body: JSON.stringify({
         brokerId: Number(formData.get("brokerId")),
-        dealName: String(formData.get("dealName") || "").trim(),
-        nextAction: String(formData.get("nextAction") || "").trim()
+        dealName: String(formData.get("dealName") || "").trim()
       })
     });
     dealMsg.textContent = "Deal created.";
@@ -123,8 +131,8 @@ function renderDeals() {
       .join("");
 
     const offerSummary =
-      deal.offer_amount && deal.offer_term_months && deal.factor_rate
-        ? `${formatCurrency(deal.offer_amount)} | ${deal.offer_term_months} mo | ${deal.factor_rate}x`
+      deal.offer_amount && deal.offer_term_value && deal.offer_term_unit && deal.factor_rate
+        ? `${formatCurrency(deal.offer_amount)} | ${deal.offer_term_value} ${deal.offer_term_unit} | ${deal.factor_rate}x`
         : "Not set";
 
     tr.innerHTML = `
@@ -138,9 +146,13 @@ function renderDeals() {
           <select data-type="stage">${stageOptions}</select>
           <select data-type="broker">${brokerOptions}</select>
           <input data-type="dealName" value="${escapeHTMLAttr(deal.deal_name)}" placeholder="Deal Name" />
-          <input data-type="nextAction" value="${escapeHTMLAttr(deal.next_action)}" placeholder="Next Action" />
           <input data-type="offerAmount" type="number" min="0" step="1000" value="${deal.offer_amount || ""}" placeholder="Offer Amount" />
-          <input data-type="offerTermMonths" type="number" min="1" step="1" value="${deal.offer_term_months || ""}" placeholder="Term (months)" />
+          <input data-type="offerTermValue" type="number" min="1" step="1" value="${deal.offer_term_value || ""}" placeholder="Term Value" />
+          <select data-type="offerTermUnit">
+            <option value="">Term Unit</option>
+            <option value="daily" ${deal.offer_term_unit === "daily" ? "selected" : ""}>Daily</option>
+            <option value="weekly" ${deal.offer_term_unit === "weekly" ? "selected" : ""}>Weekly</option>
+          </select>
           <input data-type="factorRate" type="number" min="0" step="0.01" value="${deal.factor_rate || ""}" placeholder="Factor Rate" />
           <button data-id="${deal.id}" data-type="save">Save</button>
         </div>
@@ -165,9 +177,9 @@ function renderDeals() {
       const stage = Number(row.querySelector("select[data-type='stage']").value);
       const brokerId = Number(row.querySelector("select[data-type='broker']").value);
       const dealName = row.querySelector("input[data-type='dealName']").value.trim();
-      const nextAction = row.querySelector("input[data-type='nextAction']").value.trim();
       const offerAmount = row.querySelector("input[data-type='offerAmount']").value.trim();
-      const offerTermMonths = row.querySelector("input[data-type='offerTermMonths']").value.trim();
+      const offerTermValue = row.querySelector("input[data-type='offerTermValue']").value.trim();
+      const offerTermUnit = row.querySelector("select[data-type='offerTermUnit']").value.trim();
       const factorRate = row.querySelector("input[data-type='factorRate']").value.trim();
 
       button.disabled = true;
@@ -178,9 +190,9 @@ function renderDeals() {
             stage,
             brokerId,
             dealName,
-            nextAction,
             offerAmount: offerAmount === "" ? null : Number(offerAmount),
-            offerTermMonths: offerTermMonths === "" ? null : Number(offerTermMonths),
+            offerTermValue: offerTermValue === "" ? null : Number(offerTermValue),
+            offerTermUnit: offerTermUnit || null,
             factorRate: factorRate === "" ? null : Number(factorRate)
           })
         });
@@ -200,11 +212,13 @@ function enforceOfferInputs(row) {
   }
   const stage = Number(row.querySelector("select[data-type='stage']").value);
   const required = stage >= OFFER_STAGE_INDEX;
-  ["offerAmount", "offerTermMonths", "factorRate"].forEach((type) => {
+  ["offerAmount", "offerTermValue", "offerTermUnit", "factorRate"].forEach((type) => {
     const input = row.querySelector(`input[data-type='${type}']`);
-    if (input) {
-      input.required = required;
-      input.disabled = !required;
+    const select = row.querySelector(`select[data-type='${type}']`);
+    const field = input || select;
+    if (field) {
+      field.required = required;
+      field.disabled = !required;
     }
   });
 }
