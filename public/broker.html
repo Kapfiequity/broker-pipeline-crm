@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapfi Equity | Broker Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/portal.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand-block">
+      <img src="/assets/kapfi-logo.svg" alt="Kapfi logo" class="top-logo" />
+      <div>
+        <h1>Kapfi Equity</h1>
+      </div>
+      <p>Broker Portal</p>
+    </div>
+    <div class="top-actions">
+      <span id="whoami"></span>
+      <button id="logoutBtn" type="button">Logout</button>
+    </div>
+  </header>
+
+  <section class="card table-card">
+    <div class="row">
+      <h2>Your Deals</h2>
+      <button id="refreshBtn" type="button">Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Deal Name</th>
+            <th>Stage</th>
+            <th>Offer Amount</th>
+            <th>Term</th>
+            <th>Factor Rate</th>
+            <th>Next Action</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody id="dealTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="/broker.js"></script>
+</body>
+</html>

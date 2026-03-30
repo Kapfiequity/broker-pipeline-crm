@@ -1,24 +1,60 @@
-# Broker Pipeline CRM
+# Kapfi Equity Broker Portal CRM
 
-Simple broker-facing CRM board where deals move through these stages:
+This is a real role-based CRM portal with backend permissions:
 
-- Intake
-- In Pricing
-- Offer Sent
-- Docs Sent
-- Closed
+- `Admin` can invite brokers with signup links, create deals, assign/reassign deals, and move deal stages.
+- `Broker` can only log in and view deals assigned to them.
+- Brokers cannot see each other's deals.
+- Offer details (`offer amount`, `term`, `factor rate`) are required at `Offer Sent` stage and beyond.
 
-## Features
+## Stack
 
-- Brokers can submit a new deal with broker name, client, and amount.
-- Pipeline is shown as stage columns (kanban style).
-- Every deal has a stage dropdown for instant updates.
-- Broker filter lets users view all brokers or one specific broker.
-- Data is persisted in browser local storage.
+- Node.js + Express
+- SQLite (`better-sqlite3`)
+- JWT auth
+- Password hashing with `bcryptjs`
 
-## Run
+## Important Routes
 
-1. Open `index.html` in your browser.
-2. Add deals with the form.
-3. Update each deal stage from the dropdown.
-4. Switch the `Broker view` filter to see one broker's pipeline.
+- Login: `/login.html`
+- Broker signup (invite link): `/signup.html?token=...`
+- Admin portal: `/admin.html`
+- Broker portal: `/broker.html`
+
+## First Admin Login
+
+When the app starts first time, it auto-creates:
+
+- Email: `admin@kapfi.co`
+- Password: `ChangeMe123!`
+
+Change this in production by setting environment variables:
+
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `ADMIN_NAME`
+- `JWT_SECRET`
+
+## Local Run
+
+1. Install Node.js (LTS)
+2. In project folder, run:
+   - `npm install`
+   - `npm start`
+3. Open: `http://localhost:3000/login.html`
+
+## Deploy (Backend Required)
+
+Because this project has a backend, use a Node host (Render, Railway, Fly.io, or similar).
+Static-only Vercel deployment is not enough for login/database unless you rewrite into serverless architecture.
+
+## Core Permission Rules Implemented
+
+- Admin can see all deals.
+- Broker sees only deals where `deals.broker_id = broker_user_id`.
+- Only admin routes can invite brokers, create deals, assign deals, or move stage.
+
+## Database File
+
+- SQLite file: `kapfi.db`
+- It is auto-created on first run.

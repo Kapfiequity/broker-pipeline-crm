@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapfi Equity | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/portal.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand-block">
+      <img src="/assets/kapfi-logo.svg" alt="Kapfi logo" class="top-logo" />
+      <div>
+        <h1>Kapfi Equity</h1>
+      </div>
+      <p>Admin Portal</p>
+    </div>
+    <div class="top-actions">
+      <span id="whoami"></span>
+      <button id="logoutBtn" type="button">Logout</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Invite Broker</h2>
+      <form id="inviteForm" class="form">
+        <label>Broker Email</label>
+        <input name="email" type="email" required />
+        <button type="submit">Generate Signup Link</button>
+      </form>
+      <p id="inviteMsg" class="msg"></p>
+      <label>Signup Link</label>
+      <input id="inviteLink" readonly />
+    </section>
+
+    <section class="card">
+      <h2>Create Deal</h2>
+      <form id="dealForm" class="form">
+        <label>Broker</label>
+        <select name="brokerId" id="brokerSelect" required></select>
+        <label>Deal Name</label>
+        <input name="dealName" required />
+        <label>Next Action</label>
+        <input name="nextAction" />
+        <button type="submit">Create Deal</button>
+      </form>
+      <p id="dealMsg" class="msg"></p>
+    </section>
+  </main>
+
+  <section class="card table-card">
+    <div class="row">
+      <h2>All Deals</h2>
+      <button id="refreshBtn" type="button">Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Deal Name</th>
+            <th>Broker</th>
+            <th>Stage</th>
+            <th>Offer</th>
+            <th>Next Action</th>
+            <th>Controls</th>
+          </tr>
+        </thead>
+        <tbody id="dealTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

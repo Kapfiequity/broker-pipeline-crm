@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapfi Equity | Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/portal.css" />
+</head>
+<body class="login-body">
+  <main class="login-shell">
+    <section class="login-card">
+      <img src="/assets/kapfi-logo.svg" alt="Kapfi logo" class="login-logo" />
+      <h1>Kapfi Equity</h1>
+      <p>Broker Deal Portal</p>
+      <form id="loginForm">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required />
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required />
+
+        <button type="submit">Sign In</button>
+      </form>
+      <p id="error" class="error"></p>
+      <p class="hint">Have an invite link? <a href="/signup.html">Complete broker signup</a></p>
+      <p class="hint">Admin default: `admin@kapfi.co` / `ChangeMe123!`</p>
+    </section>
+  </main>
+  <script src="/login.js"></script>
+</body>
+</html>
