@@ -9,7 +9,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "replace-this-with-a-secure-secret";
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "kapfi.db");
-const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
 
 const STAGES = ["Intake", "In Pricing", "Offer Sent", "Docs Sent", "Final Review", "Funded"];
 const OFFER_STAGE_INDEX = 2;
@@ -145,7 +144,8 @@ app.post("/api/admin/broker-invites", authRequired, roleRequired("admin"), (req,
     "INSERT INTO broker_invites (email, token_hash, created_by_user_id, expires_at) VALUES (?, ?, ?, ?)"
   ).run(email, tokenHash, req.user.id, expiresAt);
 
-  const signupUrl = `${APP_BASE_URL}/signup.html?token=${rawToken}`;
+  const baseUrl = resolveBaseUrl(req);
+  const signupUrl = `${baseUrl}/signup.html?token=${rawToken}`;
   res.status(201).json({ invite: { email, signupUrl, expiresAt } });
 });
 
@@ -516,4 +516,20 @@ function clamp(value, min, max) {
 
 function buildAccountId() {
   return Math.random().toString(16).slice(2, 10).toUpperCase();
+}
+
+function resolveBaseUrl(req) {
+  const origin = req.get("origin");
+  if (origin) {
+    return origin;
+  }
+
+  const forwardedProto = req.get("x-forwarded-proto");
+  const host = req.get("host");
+  if (host) {
+    const proto = forwardedProto || "https";
+    return `${proto}://${host}`;
+  }
+
+  return process.env.APP_BASE_URL || `http://localhost:${PORT}`;
 }
