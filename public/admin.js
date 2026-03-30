@@ -1,7 +1,8 @@
 const STAGES = [
   "Submission Received",
   "In Pricing",
-  "Offer or Declined",
+  "Offer",
+  "Declined",
   "Docs Requested",
   "Docs Sent",
   "In Login",
@@ -9,6 +10,7 @@ const STAGES = [
   "Funded"
 ];
 const OFFER_STAGE_INDEX = 2;
+const DECLINED_STAGE_INDEX = 3;
 const token = localStorage.getItem("kapfi_token");
 const user = safeParse(localStorage.getItem("kapfi_user"));
 
@@ -211,7 +213,7 @@ function enforceOfferInputs(row) {
     return;
   }
   const stage = Number(row.querySelector("select[data-type='stage']").value);
-  const required = stage >= OFFER_STAGE_INDEX;
+  const required = stage >= OFFER_STAGE_INDEX && stage !== DECLINED_STAGE_INDEX;
   ["offerAmount", "offerTermValue", "offerTermUnit", "factorRate"].forEach((type) => {
     const input = row.querySelector(`input[data-type='${type}']`);
     const select = row.querySelector(`select[data-type='${type}']`);
@@ -251,9 +253,7 @@ function safeParse(value) {
 }
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(
-    value || 0
-  );
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value || 0);
 }
 
 function escapeHTML(value) {
