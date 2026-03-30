@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spartan Cap Fund | Deal Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">%</span>
+        <span class="brand-text">CREDIBLY</span>
+      </div>
+      <nav class="nav">
+        <a href="#" class="nav-item">Dashboard</a>
+        <a href="#" class="nav-item active">Deal Pipeline</a>
+        <a href="#" class="nav-item">Portfolio Performance</a>
+        <a href="#" class="nav-item">Commissions</a>
+        <a href="#" class="nav-item">Participation</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <h1>Spartan Cap Fund LLC</h1>
+        <div class="header-actions">
+          <button id="toggleFormBtn" class="primary-btn" type="button">Submit a Funding Request</button>
+          <div class="user-pill">David Maekitan <span>Admin</span></div>
+        </div>
+      </header>
+
+      <section class="page">
+        <div class="title-row">
+          <h2>Deal Pipeline</h2>
+          <input id="searchInput" type="search" placeholder="Search by account #, DBA, or legal name" />
+        </div>
+
+        <section class="form-panel hidden" id="formPanel">
+          <h3>New Deal</h3>
+          <form id="dealForm" class="deal-form">
+            <label for="brokerName">Broker Name</label>
+            <input id="brokerName" name="brokerName" required />
+
+            <label for="clientName">DBA</label>
+            <input id="clientName" name="clientName" required />
+
+            <label for="dealName">Legal Name</label>
+            <input id="dealName" name="dealName" required />
+
+            <label for="dealValue">Advance Amount ($)</label>
+            <input id="dealValue" name="dealValue" type="number" min="0" step="1000" />
+
+            <label for="notes">Next Action Item</label>
+            <input id="notes" name="notes" placeholder="Collect last 3 months statements" />
+
+            <button type="submit">Create Deal</button>
+          </form>
+        </section>
+
+        <div id="stageTracker" class="stage-tracker"></div>
+
+        <div class="meta-row">
+          <div id="pipelineSummary" class="summary-text">All (0)</div>
+          <div class="controls">
+            <select id="sortSelect">
+              <option value="recent">Closest To Funding</option>
+              <option value="oldest">Oldest Submitted</option>
+              <option value="amount">Highest Advance Amount</option>
+            </select>
+            <span id="dealCount" class="deal-count">0 deals</span>
+          </div>
+        </div>
+
+        <section class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Account #</th>
+                <th>DBA</th>
+                <th>Legal Name</th>
+                <th>Submitted Date</th>
+                <th>Days Since Submission</th>
+                <th>Advance Amount</th>
+                <th>Status</th>
+                <th>Next Action Items</th>
+              </tr>
+            </thead>
+            <tbody id="dealTableBody"></tbody>
+          </table>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
