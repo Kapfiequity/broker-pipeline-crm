@@ -10,7 +10,16 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "replace-this-with-a-secure-secret";
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "kapfi.db");
 
-const STAGES = ["Intake", "In Pricing", "Offer Sent", "Docs Sent", "Final Review", "Funded"];
+const STAGES = [
+  "Submission Received",
+  "In Pricing",
+  "Offer or Declined",
+  "Docs Requested",
+  "Docs Sent",
+  "In Login",
+  "Call Completed Working on Report",
+  "Funded"
+];
 const OFFER_STAGE_INDEX = 2;
 
 const db = new Database(DB_PATH);
@@ -154,7 +163,6 @@ app.post("/api/admin/deals", authRequired, roleRequired("admin"), (req, res) => 
   const accountId = payload.accountId ? String(payload.accountId).trim() : buildAccountId();
   const brokerId = Number(payload.brokerId || 0);
   const dealName = String(payload.dealName || "").trim();
-  const nextAction = String(payload.nextAction || "").trim() || "Review and update";
   const stage = clamp(Number(payload.stage || 0), 0, STAGES.length - 1);
 
   if (!brokerId || !dealName) {
@@ -173,7 +181,7 @@ app.post("/api/admin/deals", authRequired, roleRequired("admin"), (req, res) => 
 
   let result;
   try {
-    result = insert.run(accountId, brokerId, dealName, nextAction, stage);
+    result = insert.run(accountId, brokerId, dealName, getNextActionForStage(stage), stage);
   } catch (error) {
     if (String(error.message).includes("UNIQUE")) {
       return res.status(409).json({ error: "Account id already exists. Try another one." });
@@ -206,11 +214,12 @@ app.patch("/api/admin/deals/:id", authRequired, roleRequired("admin"), (req, res
   const updatedStage = payload.stage === undefined ? deal.stage : clamp(Number(payload.stage), 0, STAGES.length - 1);
   const updatedBrokerId = payload.brokerId === undefined ? deal.broker_id : Number(payload.brokerId);
   const updatedDealName = payload.dealName === undefined ? deal.deal_name : String(payload.dealName || "").trim();
-  const updatedAction = payload.nextAction === undefined ? deal.next_action : String(payload.nextAction || "").trim();
   const updatedOfferAmount =
     payload.offerAmount === undefined ? deal.offer_amount : normalizeNumber(payload.offerAmount);
-  const updatedOfferTerm =
-    payload.offerTermMonths === undefined ? deal.offer_term_months : normalizeInteger(payload.offerTermMonths);
+  const updatedOfferTermValue =
+    payload.offerTermValue === undefined ? deal.offer_term_value : normalizeInteger(payload.offerTermValue);
+  const updatedOfferTermUnit =
+    payload.offerTermUnit === undefined ? deal.offer_term_unit : normalizeTermUnit(payload.offerTermUnit);
   const updatedFactorRate =
     payload.factorRate === undefined ? deal.factor_rate : normalizeNumber(payload.factorRate);
 
@@ -228,27 +237,31 @@ app.patch("/api/admin/deals/:id", authRequired, roleRequired("admin"), (req, res
 
   if (updatedStage >= OFFER_STAGE_INDEX) {
     if (!updatedOfferAmount || updatedOfferAmount <= 0) {
-      return res.status(400).json({ error: "Offer Amount is required once deal reaches Offer Sent stage." });
+      return res.status(400).json({ error: "Offer Amount is required once deal reaches Offer or Declined stage." });
     }
-    if (!updatedOfferTerm || updatedOfferTerm <= 0) {
-      return res.status(400).json({ error: "Offer Term is required once deal reaches Offer Sent stage." });
+    if (!updatedOfferTermValue || updatedOfferTermValue <= 0) {
+      return res.status(400).json({ error: "Offer Term value is required once deal reaches Offer or Declined stage." });
+    }
+    if (!updatedOfferTermUnit) {
+      return res.status(400).json({ error: "Offer Term unit must be Daily or Weekly once deal reaches Offer or Declined stage." });
     }
     if (!updatedFactorRate || updatedFactorRate <= 0) {
-      return res.status(400).json({ error: "Factor Rate is required once deal reaches Offer Sent stage." });
+      return res.status(400).json({ error: "Factor Rate is required once deal reaches Offer or Declined stage." });
     }
   }
 
   db.prepare(
     `UPDATE deals
-     SET stage = ?, broker_id = ?, deal_name = ?, next_action = ?, offer_amount = ?, offer_term_months = ?, factor_rate = ?, updated_at = CURRENT_TIMESTAMP
+     SET stage = ?, broker_id = ?, deal_name = ?, next_action = ?, offer_amount = ?, offer_term_value = ?, offer_term_unit = ?, factor_rate = ?, updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`
   ).run(
     updatedStage,
     updatedBrokerId,
     updatedDealName,
-    updatedAction || "Review and update",
+    getNextActionForStage(updatedStage),
     updatedOfferAmount,
-    updatedOfferTerm,
+    updatedOfferTermValue,
+    updatedOfferTermUnit,
     updatedFactorRate,
     id
   );
@@ -270,7 +283,8 @@ app.patch("/api/admin/deals/:id", authRequired, roleRequired("admin"), (req, res
 
   if (
     updatedOfferAmount !== deal.offer_amount ||
-    updatedOfferTerm !== deal.offer_term_months ||
+    updatedOfferTermValue !== deal.offer_term_value ||
+    updatedOfferTermUnit !== deal.offer_term_unit ||
     updatedFactorRate !== deal.factor_rate
   ) {
     db.prepare(
@@ -282,7 +296,8 @@ app.patch("/api/admin/deals/:id", authRequired, roleRequired("admin"), (req, res
       updatedStage,
       JSON.stringify({
         offerAmount: updatedOfferAmount,
-        offerTermMonths: updatedOfferTerm,
+        offerTermValue: updatedOfferTermValue,
+        offerTermUnit: updatedOfferTermUnit,
         factorRate: updatedFactorRate
       })
     );
@@ -374,6 +389,8 @@ function initDatabase() {
       advance_amount REAL NOT NULL DEFAULT 0,
       offer_amount REAL,
       offer_term_months INTEGER,
+      offer_term_value INTEGER,
+      offer_term_unit TEXT CHECK(offer_term_unit IN ('daily', 'weekly')),
       factor_rate REAL,
       next_action TEXT NOT NULL DEFAULT 'Review and update',
       stage INTEGER NOT NULL DEFAULT 0,
@@ -412,6 +429,8 @@ function initDatabase() {
   addColumnIfMissing("deals", "deal_name", "TEXT NOT NULL DEFAULT ''");
   addColumnIfMissing("deals", "offer_amount", "REAL");
   addColumnIfMissing("deals", "offer_term_months", "INTEGER");
+  addColumnIfMissing("deals", "offer_term_value", "INTEGER");
+  addColumnIfMissing("deals", "offer_term_unit", "TEXT");
   addColumnIfMissing("deals", "factor_rate", "REAL");
 
   const adminEmail = (process.env.ADMIN_EMAIL || "admin@kapfi.co").toLowerCase().trim();
@@ -440,7 +459,7 @@ function addColumnIfMissing(tableName, columnName, sqlType) {
 
 function listDeals(forBrokerId) {
   const baseQuery =
-    `SELECT d.id, d.account_id, d.deal_name, d.client_name, d.legal_name, d.advance_amount, d.offer_amount, d.offer_term_months, d.factor_rate, d.next_action, d.stage, d.submitted_at, d.updated_at,
+    `SELECT d.id, d.account_id, d.deal_name, d.client_name, d.legal_name, d.advance_amount, d.offer_amount, d.offer_term_value, d.offer_term_unit, d.factor_rate, d.next_action, d.stage, d.submitted_at, d.updated_at,
             u.id AS broker_id, u.name AS broker_name, u.email AS broker_email
      FROM deals d
      JOIN users u ON d.broker_id = u.id`;
@@ -453,6 +472,7 @@ function listDeals(forBrokerId) {
   return rows.map((row) => ({
     ...row,
     deal_name: row.deal_name || row.legal_name || row.client_name || "Untitled Deal",
+    next_action: getNextActionForStage(row.stage),
     stage_label: STAGES[row.stage] || "Unknown"
   }));
 }
@@ -460,7 +480,7 @@ function listDeals(forBrokerId) {
 function getDealById(id) {
   const row = db
     .prepare(
-      `SELECT d.id, d.account_id, d.deal_name, d.client_name, d.legal_name, d.advance_amount, d.offer_amount, d.offer_term_months, d.factor_rate, d.next_action, d.stage, d.submitted_at, d.updated_at,
+      `SELECT d.id, d.account_id, d.deal_name, d.client_name, d.legal_name, d.advance_amount, d.offer_amount, d.offer_term_value, d.offer_term_unit, d.factor_rate, d.next_action, d.stage, d.submitted_at, d.updated_at,
               u.id AS broker_id, u.name AS broker_name, u.email AS broker_email
        FROM deals d
        JOIN users u ON d.broker_id = u.id
@@ -474,6 +494,7 @@ function getDealById(id) {
   return {
     ...row,
     deal_name: row.deal_name || row.legal_name || row.client_name || "Untitled Deal",
+    next_action: getNextActionForStage(row.stage),
     stage_label: STAGES[row.stage] || "Unknown"
   };
 }
@@ -509,6 +530,17 @@ function normalizeInteger(value) {
   return Math.trunc(num);
 }
 
+function normalizeTermUnit(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const normalized = String(value).toLowerCase().trim();
+  if (normalized === "daily" || normalized === "weekly") {
+    return normalized;
+  }
+  return null;
+}
+
 function clamp(value, min, max) {
   const numeric = Number(value);
   return Math.min(max, Math.max(min, Number.isFinite(numeric) ? numeric : min));
@@ -516,6 +548,13 @@ function clamp(value, min, max) {
 
 function buildAccountId() {
   return Math.random().toString(16).slice(2, 10).toUpperCase();
+}
+
+function getNextActionForStage(stage) {
+  if (stage >= STAGES.length - 1) {
+    return "Completed";
+  }
+  return STAGES[stage + 1];
 }
 
 function resolveBaseUrl(req) {
