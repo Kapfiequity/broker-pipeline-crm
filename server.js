@@ -13,7 +13,8 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, "kapfi.db");
 const STAGES = [
   "Submission Received",
   "In Pricing",
-  "Offer or Declined",
+  "Offer",
+  "Declined",
   "Docs Requested",
   "Docs Sent",
   "In Login",
@@ -21,6 +22,7 @@ const STAGES = [
   "Funded"
 ];
 const OFFER_STAGE_INDEX = 2;
+const DECLINED_STAGE_INDEX = 3;
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
@@ -235,18 +237,19 @@ app.patch("/api/admin/deals/:id", authRequired, roleRequired("admin"), (req, res
     return res.status(400).json({ error: "Assigned broker not found." });
   }
 
-  if (updatedStage >= OFFER_STAGE_INDEX) {
+  const requiresOfferFields = updatedStage >= OFFER_STAGE_INDEX && updatedStage !== DECLINED_STAGE_INDEX;
+  if (requiresOfferFields) {
     if (!updatedOfferAmount || updatedOfferAmount <= 0) {
-      return res.status(400).json({ error: "Offer Amount is required once deal reaches Offer or Declined stage." });
+      return res.status(400).json({ error: "Offer Amount is required once deal reaches Offer stage." });
     }
     if (!updatedOfferTermValue || updatedOfferTermValue <= 0) {
-      return res.status(400).json({ error: "Offer Term value is required once deal reaches Offer or Declined stage." });
+      return res.status(400).json({ error: "Offer Term value is required once deal reaches Offer stage." });
     }
     if (!updatedOfferTermUnit) {
-      return res.status(400).json({ error: "Offer Term unit must be Daily or Weekly once deal reaches Offer or Declined stage." });
+      return res.status(400).json({ error: "Offer Term unit must be Daily or Weekly once deal reaches Offer stage." });
     }
     if (!updatedFactorRate || updatedFactorRate <= 0) {
-      return res.status(400).json({ error: "Factor Rate is required once deal reaches Offer or Declined stage." });
+      return res.status(400).json({ error: "Factor Rate is required once deal reaches Offer stage." });
     }
   }
 
@@ -551,6 +554,9 @@ function buildAccountId() {
 }
 
 function getNextActionForStage(stage) {
+  if (stage === DECLINED_STAGE_INDEX) {
+    return "Completed";
+  }
   if (stage >= STAGES.length - 1) {
     return "Completed";
   }
