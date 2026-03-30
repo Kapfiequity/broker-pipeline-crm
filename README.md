@@ -5,7 +5,7 @@ This is a real role-based CRM portal with backend permissions:
 - `Admin` can invite brokers with signup links, create deals, assign/reassign deals, and move deal stages.
 - `Broker` can only log in and view deals assigned to them.
 - Brokers cannot see each other's deals.
-- Offer details (`offer amount`, `term`, `factor rate`) are required at `Offer Sent` stage and beyond.
+- Offer details (`offer amount`, `term value`, `term unit daily/weekly`, `factor rate`) are required at `Offer or Declined` stage and beyond.
 
 ## Stack
 
